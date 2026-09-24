@@ -6,17 +6,15 @@ Aplicación web para centralizar y comparar ofertas de supermercados según la u
 * Roqué, Gabriel Osvaldo
 * Airalde, Milagros Abril
 
-## Tecnologías Utilizadas
-*   **Frontend:** HTML, CSS, JavaScript/TypeScript
-*   **Backend:** Python
-*   **Base de Datos:** MongoDB (NoSQL)
-*   **Plataforma:** Google Cloud
 
-## Estructura del Proyecto
-*   `/frontend`: Interfaz de usuario.
-*   `/backend`: API y lógica de negocio.
-*   `/database`: Modelado de colecciones y scripts.
-*   `/docs`: Documentación y entregas de la materia.
+## Stack Tecnológico
+* **Frontend:** HTML, CSS y JavaScript/TypeScript.
+* **Backend:** Python (FastAPI o Flask).
+* **Base de Datos:** MongoDB Atlas.
+* **Despliegue:** Google Cloud Platform (GCP).
 
-## Instalación y Uso
-*(Se completará a medida que avance el desarrollo)*
+## Funcionalidades Principales (MVP)
+* **Búsqueda y filtrado:** Los usuarios pueden filtrar promociones por día de la semana, supermercado (ej. Cordiez, Disco, ChangoMâs), banco o tarjeta.
+* **Geolocalización básica:** Visualización de las ofertas disponibles según la zona o barrio (ej. Nueva Córdoba, Centro).
+* **Visualización de detalles:** Tarjetas de información con los topes de reintegro, vigencia y condiciones de la promoción.
+* **Carga de promociones (Admin):** Interfaz o endpoints básicos para dar de alta, modificar o dar de baja promociones de forma manual.
