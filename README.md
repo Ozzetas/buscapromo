@@ -19,7 +19,7 @@ Aplicación web para centralizar y comparar ofertas de supermercados según la u
 * **Visualización de detalles:** Tarjetas de información con los topes de reintegro, vigencia y condiciones de la promoción.
 * **Carga de promociones (Admin):** Interfaz o endpoints básicos para dar de alta, modificar o dar de baja promociones de forma manual.
 
-* ## 📁 1. Arquitectura y Estructura del Repositorio
+* ## 1. Arquitectura y Estructura del Repositorio
 
 El proyecto se desarrolla dentro de un único repositorio de GitHub para mantenerlo centralizado. La estructura de carpetas es la siguiente:
 
@@ -29,7 +29,7 @@ El proyecto se desarrolla dentro de un único repositorio de GitHub para mantene
 * **`/docs`**: Carpeta destinada a guardar toda la documentación, informes, esquemas de avances y entregas del proyecto[cite: 1].
 * **`README.md`**: Documento principal con la documentación del proyecto, instrucciones de instalación, stack tecnológico e integrantes del equipo[cite: 1].
 
-* ## 🧩 2. Listado de Módulos
+* ## 2. Listado de Módulos
 
 El sistema se divide en los siguientes módulos para organizar sus funcionalidades:
 
@@ -38,7 +38,7 @@ El sistema se divide en los siguientes módulos para organizar sus funcionalidad
 * **Búsqueda y Comparación**: Permite a los usuarios consultar qué oferta está disponible hoy y cuál es el supermercado indicado para aprovecharla[cite: 2].
 * **Gestión de Usuarios**: Se ocupa de la administración de perfiles, un módulo necesario para poder identificar a la persona y validarle beneficios personalizados, como las ofertas por su cumpleaños[cite: 2].
 
-* ## 🗄️ 3. Diagrama de Entidades (Base de Datos Documental)
+* ## 3. Diagrama de Entidades (Base de Datos Documental)
 
 Dado que utilizamos una base de datos NoSQL, nuestro código trabaja con objetos (documentos). A continuación se detalla cómo están relacionadas las entidades principales a través de sus referencias:
 
