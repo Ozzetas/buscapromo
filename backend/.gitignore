@@ -1,0 +1,10 @@
+# Entornos virtuales
+venv/
+env/
+
+# Caché compilada de Python
+__pycache__/
+*.pyc
+
+# Archivo de variables de entorno (NUNCA SUBIR A GIT)
+.env
