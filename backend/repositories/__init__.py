@@ -1,5 +1,12 @@
 """
 Módulo Repositories: Capa de Acceso a Datos (DAL).
-Aísla las operaciones CRUD (Create, Read, Update, Delete) de MongoDB 
-fuera de la capa de enrutamiento (API), cumpliendo con el principio de Responsabilidad Única.
+Exporto los repositorios para facilitar su inyección en los controladores de la API.
 """
+
+from .supermarket_repository import SupermarketRepository
+from .promotion_repository import PromotionRepository
+
+__all__ = [
+    "SupermarketRepository",
+    "PromotionRepository"
+]

@@ -8,11 +8,15 @@ from core.config import settings
 from core.logger import logger
 from db.database import connect_to_mongo, close_mongo_connection
 
+# Importo los enrutadores de las entidades del sistema
+from api.supermarket_router import router as supermarket_router
+from api.promotion_router import router as promotion_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Manejo moderno del ciclo de vida en FastAPI.
-    Asegura que la BD se conecte antes de recibir tráfico y se cierre al apagar.
+    Gestiono el ciclo de vida de la aplicación: inicio el pool de conexiones a MongoDB 
+    al arrancar el servidor y lo cierro de forma segura al detener el servicio.
     """
     logger.info(
         "Iniciando servicio", 
@@ -21,20 +25,20 @@ async def lifespan(app: FastAPI):
     )
     await connect_to_mongo()
     
-    yield  # La aplicación atiende peticiones aquí
+    yield
     
     logger.info("Iniciando secuencia de apagado del servicio")
     await close_mongo_connection()
 
 def create_app() -> FastAPI:
     """
-    Factory pattern para la instancia de la aplicación.
-    Aísla la configuración para facilitar la inyección de dependencias en los tests.
+    Aplico el patrón Factory para construir e inicializar la aplicación FastAPI.
+    Facilita las pruebas automatizadas y desacopla la configuración global.
     """
     app = FastAPI(
         title=settings.PROJECT_NAME,
         version=settings.VERSION,
-        description="API core para la plataforma Buscapromo",
+        description="API RESTful para la plataforma geolocalizada de ofertas Buscapromo",
         lifespan=lifespan
     )
 
@@ -44,7 +48,7 @@ def create_app() -> FastAPI:
         call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         """
-        Middleware con tipado estricto para registrar peticiones y atrapar errores críticos.
+        Middleware de observabilidad: registra cada petición HTTP entrante y su código de respuesta.
         """
         logger.info("Petición recibida", method=request.method, url=str(request.url))
         try:
@@ -52,15 +56,19 @@ def create_app() -> FastAPI:
             logger.info("Petición procesada", status_code=response.status_code)
             return response
         except Exception as exc:
-            logger.error("Error crítico no controlado en la petición", exc_info=exc)
+            logger.error("Excepción no controlada atrapada en el middleware", exc_info=exc)
             return JSONResponse(
                 status_code=500,
-                content={"detail": "Error interno del servidor. El equipo técnico ha sido notificado."}
+                content={"detail": "Error interno del servidor."}
             )
 
-    @app.get("/health")
+    # Registro los módulos de rutas bajo el versionado /api/v1
+    app.include_router(supermarket_router, prefix="/api/v1")
+    app.include_router(promotion_router, prefix="/api/v1")
+
+    @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, str]:
-        """Endpoint base para comprobación de estado de los contenedores/servidor."""
+        """Endpoint de diagnóstico para monitoreo de disponibilidad del servidor."""
         return {"status": "ok", "environment": settings.ENVIRONMENT}
 
     return app

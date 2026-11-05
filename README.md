@@ -6,6 +6,10 @@ Aplicación web para centralizar y comparar ofertas de supermercados según la u
 * Roqué, Gabriel Osvaldo
 * Airalde, Milagros Abril
 
+## MongoDB Atlas
+*Username: gabrielroque093_db_user
+Password: oY8OeqCHm82Ry4wW
+
 ## Stack Tecnológico
 * **Frontend:** HTML, CSS y JavaScript/TypeScript.
 * **Backend:** Python con **FastAPI**.
