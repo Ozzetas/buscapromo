@@ -8,7 +8,7 @@ from core.config import settings
 from core.logger import logger
 from db.database import connect_to_mongo, close_mongo_connection
 
-# Importo los enrutadores de las entidades del sistema
+from api.auth_router import router as auth_router
 from api.supermarket_router import router as supermarket_router
 from api.promotion_router import router as promotion_router
 
@@ -33,7 +33,6 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """
     Aplico el patrón Factory para construir e inicializar la aplicación FastAPI.
-    Facilita las pruebas automatizadas y desacopla la configuración global.
     """
     app = FastAPI(
         title=settings.PROJECT_NAME,
@@ -63,6 +62,7 @@ def create_app() -> FastAPI:
             )
 
     # Registro los módulos de rutas bajo el versionado /api/v1
+    app.include_router(auth_router, prefix="/api/v1")
     app.include_router(supermarket_router, prefix="/api/v1")
     app.include_router(promotion_router, prefix="/api/v1")
 

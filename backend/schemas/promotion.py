@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from models.pyobjectid import PyObjectId
+from schemas.supermarket import SupermarketResponse
 
 class PromotionBase(BaseModel):
     """
@@ -72,3 +73,11 @@ class PromotionResponse(PromotionBase):
             }
         }
     )
+
+class PromotionWithSupermarketResponse(PromotionResponse):
+    """
+    DTO compuesto para la vista principal del consumidor.
+    Anida la información completa del supermercado y su distancia en kilómetros
+    para evitar múltiples peticiones HTTP desde el Frontend.
+    """
+    supermarket: SupermarketResponse

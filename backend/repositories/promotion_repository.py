@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -25,7 +25,6 @@ class PromotionRepository:
         """
         try:
             document = promotion.model_dump()
-            # Almaceno supermarket_id como ObjectId nativo para optimizar futuros lookups en MongoDB
             document["supermarket_id"] = ObjectId(document["supermarket_id"])
             document["created_at"] = datetime.now(timezone.utc)
 
@@ -74,7 +73,6 @@ class PromotionRepository:
     async def get_active_by_day(self, day_of_week: int) -> List[PromotionResponse]:
         """
         Filtra promociones activas según el día de la semana (0=Lunes, 6=Domingo).
-        MongoDB busca automáticamente si el entero existe dentro del array 'applicable_days'.
         """
         try:
             cursor = self.collection.find({
@@ -96,10 +94,42 @@ class PromotionRepository:
             )
             raise RuntimeError("Error al consultar promociones por día.") from exc
 
+    async def get_active_by_supermarkets_and_day(
+        self, supermarket_ids: List[str], day_of_week: Optional[int] = None
+    ) -> List[PromotionResponse]:
+        """
+        Ejecuto una consulta optimizada con el operador '$in' para recuperar en un solo 
+        viaje a la base de datos todas las promociones vigentes de los supermercados cercanos.
+        """
+        if not supermarket_ids:
+            return []
+
+        try:
+            object_ids = [ObjectId(sid) for sid in supermarket_ids]
+        except InvalidId as exc:
+            logger.warning("Lista de supermercados contiene un ObjectId inválido", exc_info=exc)
+            return []
+
+        query: Dict[str, Any] = {
+            "supermarket_id": {"$in": object_ids},
+            "is_active": True
+        }
+        if day_of_week is not None:
+            query["applicable_days"] = day_of_week
+
+        try:
+            cursor = self.collection.find(query)
+            promotions: List[PromotionResponse] = []
+            async for document in cursor:
+                promotions.append(PromotionResponse(**document))
+            return promotions
+        except PyMongoError as exc:
+            logger.error("Fallo en MongoDB al ejecutar búsqueda cruzada de promociones", exc_info=exc)
+            raise RuntimeError("Error al consultar promociones geolocalizadas.") from exc
+
     async def deactivate_promotion(self, promotion_id: str) -> bool:
         """
         Aplica borrado lógico (Soft Delete) cambiando el estado booleano 'is_active'.
-        Permite mantener integridad histórica en la base de datos sin destruir registros.
         """
         try:
             obj_id = ObjectId(promotion_id)

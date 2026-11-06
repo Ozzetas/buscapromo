@@ -2,19 +2,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """
-    Gestión centralizada de variables de entorno.
-    Falla rápido si faltan variables críticas al iniciar el servidor.
+    Centralizo la gestión de variables de entorno de la aplicación.
+    Incluyo parámetros criptográficos para la emisión de tokens JWT.
     """
     PROJECT_NAME: str = "Buscapromo API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     
-    # Asignar un valor por defecto vacío elimina el falso positivo de Pylance.
-    # El valor real será inyectado por SettingsConfigDict leyendo el archivo .env.
     MONGODB_URL: str = ""
     DATABASE_NAME: str = "buscapromo_db"
     
-    # Google Cloud Platform (GCP) Config
+    # Configuración criptográfica JWT (puede sobreescribirse desde el archivo .env)
+    JWT_SECRET_KEY: str = "buscapromo_clave_secreta_desarrollo_utn_2026"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    
     GCP_PROJECT_ID: str = ""
 
     model_config = SettingsConfigDict(

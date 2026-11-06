@@ -4,14 +4,33 @@ para sanitizar los datos de entrada y salida de la API.
 """
 
 from .supermarket import SupermarketBase, SupermarketCreate, SupermarketResponse
-from .promotion import PromotionBase, PromotionCreate, PromotionResponse
+from .promotion import (
+    PromotionBase, 
+    PromotionCreate, 
+    PromotionResponse, 
+    PromotionWithSupermarketResponse
+)
+from .user import (
+    UserRole,
+    UserBase,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    TokenResponse
+)
 
-# __all__ define explícitamente qué clases se exportan cuando se usa 'from schemas import *'
 __all__ = [
     "SupermarketBase",
     "SupermarketCreate",
     "SupermarketResponse",
     "PromotionBase",
     "PromotionCreate",
-    "PromotionResponse"
+    "PromotionResponse",
+    "PromotionWithSupermarketResponse",
+    "UserRole",
+    "UserBase",
+    "UserCreate",
+    "UserLogin",
+    "UserResponse",
+    "TokenResponse"
 ]
