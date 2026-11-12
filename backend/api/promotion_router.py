@@ -1,11 +1,13 @@
 from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
+from api.auth_router import require_admin_role
 from schemas import (
     PromotionCreate, 
     PromotionResponse, 
     PromotionWithSupermarketResponse,
-    SupermarketResponse
+    SupermarketResponse,
+    UserResponse
 )
 from repositories import PromotionRepository, SupermarketRepository
 from core.logger import logger
@@ -24,15 +26,16 @@ def get_supermarket_repo() -> SupermarketRepository:
     "/",
     response_model=PromotionResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Crear una nueva promoción"
+    summary="Crear una nueva promoción (Solo Administradores)"
 )
 async def create_promotion(
     promotion_in: PromotionCreate,
+    current_admin: UserResponse = Depends(require_admin_role),
     promo_repo: PromotionRepository = Depends(get_promotion_repo),
     super_repo: SupermarketRepository = Depends(get_supermarket_repo)
 ) -> PromotionResponse:
     """
-    Valido que el supermercado exista en la base de datos antes de registrar la promoción.
+    Valido privilegios de administrador y existencia del supermercado antes de dar de alta la oferta.
     """
     try:
         supermarket = await super_repo.get_by_id(str(promotion_in.supermarket_id))
@@ -42,7 +45,13 @@ async def create_promotion(
                 detail=f"No existe un supermercado registrado con el ID {promotion_in.supermarket_id}."
             )
             
-        return await promo_repo.create(promotion_in)
+        created = await promo_repo.create(promotion_in)
+        logger.info(
+            "Promoción creada por administrador",
+            promotion_id=str(created.id),
+            admin_email=current_admin.email
+        )
+        return created
         
     except RuntimeError as exc:
         logger.error("Error procesando alta de promoción en el controlador", exc_info=exc)
@@ -77,7 +86,6 @@ async def search_promotions_nearby(
         if not nearby_supermarkets:
             return []
 
-        # Creo un diccionario en memoria O(1) para asociar cada supermercado con sus promociones
         supermarket_map: Dict[str, SupermarketResponse] = {
             str(s.id): s for s in nearby_supermarkets
         }
@@ -91,7 +99,6 @@ async def search_promotions_nearby(
         for promo in promotions:
             supermarket_data = supermarket_map.get(str(promo.supermarket_id))
             if supermarket_data is not None:
-                # Instancio el DTO compuesto pasando 'id=promo.id' para satisfacer el tipado estricto
                 enriched_results.append(
                     PromotionWithSupermarketResponse(
                         id=promo.id,
@@ -106,7 +113,6 @@ async def search_promotions_nearby(
                     )
                 )
 
-        # Ordeno priorizando la menor distancia en km y luego el mayor porcentaje de descuento
         enriched_results.sort(
             key=lambda item: (
                 item.supermarket.distance_km if item.supermarket.distance_km is not None else float("inf"),
@@ -167,14 +173,15 @@ async def list_promotions_by_day(
 @router.patch(
     "/{promotion_id}/deactivate",
     status_code=status.HTTP_200_OK,
-    summary="Dar de baja lógica una promoción"
+    summary="Dar de baja lógica una promoción (Solo Administradores)"
 )
 async def deactivate_promotion(
     promotion_id: str,
+    current_admin: UserResponse = Depends(require_admin_role),
     promo_repo: PromotionRepository = Depends(get_promotion_repo)
 ) -> dict[str, str]:
     """
-    Desactivo una promoción vigente sin borrar el documento físico de la colección.
+    Desactivo una promoción vigente validando permisos de administrador.
     """
     try:
         deactivated = await promo_repo.deactivate_promotion(promotion_id)
@@ -183,6 +190,11 @@ async def deactivate_promotion(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Promoción {promotion_id} no encontrada o ya se encontraba inactiva."
             )
+        logger.info(
+            "Promoción dada de baja por administrador",
+            promotion_id=promotion_id,
+            admin_email=current_admin.email
+        )
         return {"status": "ok", "message": "Promoción desactivada correctamente."}
     except RuntimeError as exc:
         logger.error("Error al dar de baja la promoción", promotion_id=promotion_id, exc_info=exc)

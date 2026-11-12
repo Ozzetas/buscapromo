@@ -6,11 +6,12 @@ from bson import ObjectId
 from pymongo.errors import PyMongoError
 
 from core.logger import logger
+from core.security import hash_password
 from db.database import connect_to_mongo, close_mongo_connection, get_database
 from schemas.supermarket import SupermarketCreate
 from schemas.promotion import PromotionCreate
+from schemas.user import UserCreate, UserRole
 
-# Defino un lote de sucursales reales en Córdoba Capital (Centro, Nueva Córdoba, General Paz y Alberdi)
 SUPERMARKETS_SEED: List[Dict[str, Any]] = [
     {
         "name": "Carrefour Express Colón",
@@ -49,26 +50,61 @@ SUPERMARKETS_SEED: List[Dict[str, Any]] = [
     }
 ]
 
+USERS_SEED: List[Dict[str, Any]] = [
+    {
+        "email": "admin@buscapromo.com",
+        "full_name": "Administrador Buscapromo",
+        "password": "AdminPassword2026!",
+        "role": UserRole.ADMIN
+    },
+    {
+        "email": "cliente@buscapromo.com",
+        "full_name": "Gabriel Roqué",
+        "password": "ClientePassword2026!",
+        "role": UserRole.USER
+    }
+]
+
 async def run_seeder() -> None:
     """
     Ejecuto el poblado inicial de la base de datos de forma idempotente:
-    limpio los registros de prueba previos, valido cada entidad con Pydantic 
-    e inserto las colecciones relacionales en MongoDB Atlas.
+    purgo colecciones previas e inyecto usuarios (Admin/User), sucursales y promociones.
     """
     await connect_to_mongo()
     db = get_database()
     
+    users_col = db.get_collection("users")
     supermarkets_col = db.get_collection("supermarkets")
     promotions_col = db.get_collection("promotions")
 
     try:
         logger.info("Purgo colecciones existentes para garantizar un estado limpio...")
+        await users_col.delete_many({})
         await promotions_col.delete_many({})
         await supermarkets_col.delete_many({})
 
+        # 1. Valido e inserto usuarios de prueba con contraseñas hasheadas con bcrypt
+        for user_item in USERS_SEED:
+            role: UserRole = user_item["role"]
+            validated_user = UserCreate(
+                email=user_item["email"],
+                full_name=user_item["full_name"],
+                password=user_item["password"]
+            )
+            user_doc: Dict[str, Any] = {
+                "email": validated_user.email,
+                "full_name": validated_user.full_name,
+                "hashed_password": hash_password(validated_user.password),
+                "role": role.value,
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            }
+            await users_col.insert_one(user_doc)
+            logger.info("Usuario semilla creado", email=validated_user.email, role=role.value)
+
         inserted_ids: Dict[str, ObjectId] = {}
 
-        # 1. Valido e inserto los supermercados
+        # 2. Valido e inserto los supermercados
         for item in SUPERMARKETS_SEED:
             validated_super = SupermarketCreate(**item)
             doc = validated_super.model_dump()
@@ -80,14 +116,14 @@ async def run_seeder() -> None:
                 id=str(result.inserted_id)
             )
 
-        # 2. Defino las promociones vinculadas a los ObjectId reales recién generados
+        # 3. Defino las promociones vinculadas a los ObjectId recién generados
         promotions_seed: List[Dict[str, Any]] = [
             {
                 "supermarket_id": str(inserted_ids["Carrefour Express Colón"]),
                 "title": "25% de ahorro con Tarjeta Cordobesa (Bancor)",
                 "description": "Válido en un pago en toda la tienda. Tope de reintegro $10.000 por resumen.",
                 "discount_percentage": 25.0,
-                "applicable_days": [2],  # Miércoles
+                "applicable_days": [2],
                 "is_active": True
             },
             {
@@ -95,7 +131,7 @@ async def run_seeder() -> None:
                 "title": "15% de descuento con Mi Carrefour",
                 "description": "Descuento directo en línea de cajas presentando credencial digital.",
                 "discount_percentage": 15.0,
-                "applicable_days": [0, 3],  # Lunes y Jueves
+                "applicable_days": [0, 3],
                 "is_active": True
             },
             {
@@ -103,7 +139,7 @@ async def run_seeder() -> None:
                 "title": "20% en compras mayoristas y minoristas con Banco Macro",
                 "description": "Abonando con MODO y tarjetas de crédito Visa o Mastercard. Tope $12.000.",
                 "discount_percentage": 20.0,
-                "applicable_days": [3, 4],  # Jueves y Viernes
+                "applicable_days": [3, 4],
                 "is_active": True
             },
             {
@@ -111,7 +147,7 @@ async def run_seeder() -> None:
                 "title": "30% de descuento en Lácteos y Panificados",
                 "description": "Pagando con billetera virtual MODO o efectivo en sucursal.",
                 "discount_percentage": 30.0,
-                "applicable_days": [1, 3],  # Martes y Jueves
+                "applicable_days": [1, 3],
                 "is_active": True
             },
             {
@@ -119,7 +155,7 @@ async def run_seeder() -> None:
                 "title": "25% de descuento con Cencosud y Santander",
                 "description": "Exclusivo clientes adheridos. No acumulable con otras ofertas de góndola.",
                 "discount_percentage": 25.0,
-                "applicable_days": [0, 2, 4],  # Lunes, Miércoles y Viernes
+                "applicable_days": [0, 2, 4],
                 "is_active": True
             },
             {
@@ -127,12 +163,12 @@ async def run_seeder() -> None:
                 "title": "20% de reintegro con Cuenta DNI / BNA+",
                 "description": "Pagando con código QR desde la aplicación oficial. Tope semanal $6.000.",
                 "discount_percentage": 20.0,
-                "applicable_days": [1, 5],  # Martes y Sábados
+                "applicable_days": [1, 5],
                 "is_active": True
             }
         ]
 
-        # 3. Valido con Pydantic e inserto las promociones manteniendo la referencia ObjectId
+        # 4. Valido con Pydantic e inserto las promociones
         for promo_item in promotions_seed:
             validated_promo = PromotionCreate(**promo_item)
             promo_doc = validated_promo.model_dump()
@@ -143,6 +179,7 @@ async def run_seeder() -> None:
 
         logger.info(
             "Seeder ejecutado exitosamente", 
+            users_count=len(USERS_SEED),
             supermarkets_count=len(SUPERMARKETS_SEED), 
             promotions_count=len(promotions_seed)
         )

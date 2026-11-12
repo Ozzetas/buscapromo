@@ -1,7 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from schemas import SupermarketCreate, SupermarketResponse
+from api.auth_router import require_admin_role
+from schemas import SupermarketCreate, SupermarketResponse, UserResponse
 from repositories import SupermarketRepository
 from core.logger import logger
 
@@ -15,17 +16,25 @@ def get_supermarket_repo() -> SupermarketRepository:
     "/", 
     response_model=SupermarketResponse, 
     status_code=status.HTTP_201_CREATED,
-    summary="Registrar un nuevo supermercado"
+    summary="Registrar un nuevo supermercado (Solo Administradores)"
 )
 async def create_supermarket(
     supermarket_in: SupermarketCreate,
+    current_admin: UserResponse = Depends(require_admin_role),
     repo: SupermarketRepository = Depends(get_supermarket_repo)
 ) -> SupermarketResponse:
     """
-    Da de alta una sucursal validando sus coordenadas geográficas.
+    Restrinjo el alta de sucursales exclusivamente al rol 'admin' y registro 
+    la autoría de la operación en los logs de auditoría.
     """
     try:
-        return await repo.create(supermarket_in)
+        created = await repo.create(supermarket_in)
+        logger.info(
+            "Sucursal creada por administrador",
+            supermarket_id=str(created.id),
+            admin_email=current_admin.email
+        )
+        return created
     except RuntimeError as exc:
         logger.error("Fallo al crear supermercado vía API", exc_info=exc)
         raise HTTPException(
@@ -45,7 +54,7 @@ async def list_nearby_supermarkets(
     repo: SupermarketRepository = Depends(get_supermarket_repo)
 ) -> List[SupermarketResponse]:
     """
-    Retorna los supermercados ubicados dentro del radio solicitado, ordenados por cercanía
+    Retorno los supermercados ubicados dentro del radio solicitado, ordenados por cercanía
     e incluyendo el cálculo exacto en el campo 'distance_km'.
     """
     try:
@@ -67,7 +76,7 @@ async def get_supermarket(
     repo: SupermarketRepository = Depends(get_supermarket_repo)
 ) -> SupermarketResponse:
     """
-    Busca una sucursal específica por su identificador único.
+    Busco una sucursal específica por su identificador único.
     """
     try:
         supermarket = await repo.get_by_id(supermarket_id)
@@ -93,7 +102,7 @@ async def list_supermarkets(
     repo: SupermarketRepository = Depends(get_supermarket_repo)
 ) -> List[SupermarketResponse]:
     """
-    Retorna el catálogo completo de supermercados registrados.
+    Retorno el catálogo completo de supermercados registrados.
     """
     try:
         return await repo.get_all()
