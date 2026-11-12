@@ -1,75 +1,71 @@
-# React + TypeScript + Vite
+# Buscapromo — Frontend Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interfaz de usuario SPA (*Single Page Application*) para la plataforma geolocalizada de promociones **Buscapromo**, desarrollada como parte del Trabajo Final de la Tecnicatura Universitaria en Programación (UTN).
 
-Currently, two official plugins are available:
+## Stack Técnico del Cliente
+- **Framework:** React 18 + TypeScript
+- **Bundler y Entorno de Desarrollo:** Vite
+- **Estilos:** Tailwind CSS (Diseño *Responsive Mobile-First*)
+- **Cliente HTTP:** Axios con interceptores de solicitud/respuesta para gestión automática de tokens JWT (`Bearer`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Estructura de Directorios (`src/`)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+├── api/
+│   ├── client.ts             # Instancia Axios e interceptores JWT (Authorization y manejo 401)
+│   ├── authService.ts        # Consumo de /auth/login, /auth/register y /auth/me
+│   ├── supermarketService.ts # Consumo de /supermarkets/ y /supermarkets/nearby
+│   ├── promotionService.ts   # Consumo de /promotions/search, alta y baja lógica
+│   └── index.ts              # Exportación centralizada de servicios
+├── components/
+│   ├── Navbar.tsx            # Barra de navegación adaptativa según rol (RBAC)
+│   ├── PromotionCard.tsx     # Tarjeta de oferta con distancia Haversine y días vigentes
+│   ├── PromotionExplorer.tsx # Vista pública principal con GPS, selector de radio y día
+│   ├── AdminBackoffice.tsx   # Panel exclusivo para rol 'admin' (ABMC de sucursales y ofertas)
+│   └── AuthModal.tsx         # Modal de Login/Registro con cuentas semilla preconfiguradas
+├── context/
+│   └── AuthContext.tsx       # Estado global de sesión, hidratación JWT y validación de rol
+├── types/
+│   └── index.ts              # Contratos e interfaces TypeScript espejando DTOs de Pydantic v2
+├── utils/
+│   └── constants.ts          # Radios permitidos, mapeo de días (0=Lunes..6=Domingo) y zonas de Córdoba
+├── App.tsx                   # Enrutador de vistas y composición principal
+└── main.tsx                  # Punto de montaje de React
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Instalación y Uso
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Instalar dependencias:
 
+```bash
+npm install
+```
+
+2. Configurar variable de entorno en `.env` (en la raíz de `frontend/`):
+
+```env
+VITE_API_URL=http://localhost:8000/api/v1
+```
+
+3. Levantar el servidor de desarrollo:
+
+```bash
+npm run dev
+```
+
+4. Verificar tipado estricto de TypeScript sin emitir archivos:
+
+```bash
+npx tsc --noEmit
+```
+
+5. Generar compilación optimizada para producción:
+
+```bash
+npm run build
 ```
