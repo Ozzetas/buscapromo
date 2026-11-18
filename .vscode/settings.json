@@ -1,7 +1,14 @@
 {
-    "python.analysis.extraPaths": [
-        "./backend"
-    ],
-    "python.terminal.activateEnvironment": true,
-    "python.terminal.useEnvFile": true
+  "python.analysis.extraPaths": [
+    "./backend"
+  ],
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.useEnvFile": true,
+  "css.customData": [
+    "./.vscode/tailwind.json"
+  ],
+  "css.lint.unknownAtRules": "ignore",
+  "files.associations": {
+    "*.css": "css"
+  }
 }

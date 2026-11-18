@@ -1,3 +1,4 @@
+/* Directivas de PostCSS para inyectar las capas del motor Tailwind CSS v3 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

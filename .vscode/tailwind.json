@@ -1,0 +1,21 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@tailwind",
+      "description": "Inyecta las capas base, components, utilities o variants de Tailwind CSS en tiempo de compilación mediante PostCSS."
+    },
+    {
+      "name": "@apply",
+      "description": "Incrusta clases de utilidad de Tailwind CSS dentro de reglas CSS personalizadas."
+    },
+    {
+      "name": "@layer",
+      "description": "Declara a qué capa de cascada de Tailwind (base, components o utilities) pertenece un conjunto de estilos."
+    },
+    {
+      "name": "@config",
+      "description": "Especifica el archivo de configuración de Tailwind CSS que debe utilizarse para compilar esta hoja de estilos."
+    }
+  ]
+}
